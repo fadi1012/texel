@@ -9,6 +9,13 @@ video_files_urls = ["https://storage.googleapis.com/hiring_process_data/freeze_f
                     "https://storage.googleapis.com/hiring_process_data/freeze_frame_input_c.mp4"]
 
 
+class VideoOutput:
+    def __init__(self, valid_periods, longest_valid_period, valid_video_percentage):
+        self.valid_periods = valid_periods
+        self.longest_valid_period = longest_valid_period
+        self.valid_video_percentage = valid_video_percentage
+
+
 def download_video_file(video_url=None):
     if not os.path.exists(VIDEO_FILES_DIR):
         os.makedirs(VIDEO_FILES_DIR)
@@ -31,12 +38,15 @@ def expose_video_output(video_path, n=0.003, d=2):
     return output_text_file_path
 
 
-# This method go over videos output file and returns a list that contains tuples of all the valid
-# periods of the video and the longest period of valid video of the stream
+# This method go over videos output file and returns
+# VideoOutput Object that contains : list of all valid periods of the stream,
+# longest valid period of the stream
+# 
 def get_video_valid_periods(output_file):
     valid_periods_list = []
     valid_period_start = 0
     longest_valid_period = 0
+    total_valid_video_period = 0
     with open(output_file, 'r') as file:
         for line in file:
             if 'freeze_start' in line:
@@ -47,9 +57,15 @@ def get_video_valid_periods(output_file):
                     valid_period = freeze_start_value - valid_period_start
                     if valid_period > longest_valid_period:
                         longest_valid_period = valid_period
+                    # sums total valid periods of the stream
+                    total_valid_video_period += valid_period
             elif 'freeze_end' in line:
                 valid_period_start = float("{:.2f}".format(float(line.split("=")[1].replace("\n", ""))))
-    return valid_periods_list, longest_valid_period
+        # for simplicity last freeze end is the total duration of the stream
+        total_stream_duration = valid_period_start
+        # calc percentage of all aggregated valid video periods over the entire duration of the stream
+        total_valid_video_percentage = float("{:.2f}".format(total_valid_video_period * 100 / total_stream_duration))
+    return VideoOutput(valid_periods=valid_periods_list, longest_valid_period=longest_valid_period, valid_video_percentage=total_valid_video_percentage)
 
 
 def main():
