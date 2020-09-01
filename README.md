@@ -18,3 +18,11 @@
 # video_utils.py
 - contain utils method to download a video by url and to generate 
 - video output using ffmpeg cli with freezedetector filter
+
+
+# under tests folder:
+- you can run freeze_detector_test.py which is a simple unittest
+- that validates the following:
+- if the calc of synced period method return correct values
+- a test method that can get a file and it's expected output
+- then it compares the date
