@@ -8,6 +8,7 @@
 - 2) you can run docker container :
 -     docker build -t freezedetector .
 -     docker run freezedetector
+- currently there is an issue that files from container are not copied to host
 
 # freeze_detector.py:
 - main file that contains the task requirements it 
@@ -36,4 +37,6 @@
 - add more tests coverage
 - create a docker file for running tests
 - fix the issue that when running the docker container
-- it's not creating output/videos files and it's content
+- it's not creating output/videos files and it's content in the project
+- it's currently added inside the container
+- need to copy files from container to host
