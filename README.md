@@ -4,6 +4,8 @@
 - 1) you can run freeze_detector.py locally but activating texelvenv is needed:
 -     source texelvenv/bin/activate
 -     python freeze_detector.py
+- after running from clean env you'll see two new dir's
+- output and videos
 
 - 2) you can run docker container :
 -     docker build -t freezedetector .
