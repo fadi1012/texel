@@ -1,47 +1,17 @@
-import requests
-import os
+from freeze_output import VideoOutput, FreezeOutput
+from video_utils import download_video_file, expose_video_output
+import json
 
-TASK_DIR = os.path.abspath(os.curdir)
-VIDEO_FILES_DIR = TASK_DIR + '/videos'
-VIDEO_OUTPUT_FILES_DIR = TASK_DIR + '/output'
 video_files_urls = ["https://storage.googleapis.com/hiring_process_data/freeze_frame_input_a.mp4",
                     "https://storage.googleapis.com/hiring_process_data/freeze_frame_input_b.mp4",
                     "https://storage.googleapis.com/hiring_process_data/freeze_frame_input_c.mp4"]
 
 
-class VideoOutput:
-    def __init__(self, valid_periods, longest_valid_period, valid_video_percentage):
-        self.valid_periods = valid_periods
-        self.longest_valid_period = longest_valid_period
-        self.valid_video_percentage = valid_video_percentage
-
-
-def download_video_file(video_url=None):
-    if not os.path.exists(VIDEO_FILES_DIR):
-        os.makedirs(VIDEO_FILES_DIR)
-    video_path = VIDEO_FILES_DIR + "/" + video_url.split("/hiring_process_data/")[1]
-    if not os.path.exists(video_path):
-        request = requests.get(video_url)
-        open(video_path, 'wb').write(request.content)
-    return video_path
-
-
-# this method uses ffmpeg cli with freezedetect filter and exposes video freeze detection
-# https://ffmpeg.org/ffmpeg-filters.html#freezedetect
-def expose_video_output(video_path, n=0.003, d=2):
-    if not os.path.exists(VIDEO_OUTPUT_FILES_DIR):
-        os.makedirs(VIDEO_OUTPUT_FILES_DIR)
-    output_text_file_path = VIDEO_OUTPUT_FILES_DIR + "/" + video_path.split("videos/")[1].replace("mp4", "txt")
-    call_with_args = './ffmpeg -i %s -vf "freezedetect=n=%s:d=%s,metadata=mode=print:file=%s" -map 0:v:0 -f null -' % \
-                     (video_path, n, d, output_text_file_path)
-    os.system(call_with_args)
-    return output_text_file_path
-
-
-# This method go over videos output file and returns
-# VideoOutput Object that contains : list of all valid periods of the stream,
+# This method goes over videos output file and returns
+# VideoOutput Object that contains :
+# list of all valid periods of the stream,
 # longest valid period of the stream
-# 
+# valid_video_percentage of the stream
 def get_video_valid_periods(output_file):
     valid_periods_list = []
     valid_period_start = 0
@@ -68,13 +38,45 @@ def get_video_valid_periods(output_file):
     return VideoOutput(valid_periods=valid_periods_list, longest_valid_period=longest_valid_period, valid_video_percentage=total_valid_video_percentage)
 
 
+# This method determines whether the entire video set is synced freeze-frame wise,
+def check_if_synced_frame_freeze(videos_output):
+    total_valid_periods = -1
+    # check if all videos have the same amount of valid periods,
+    for value in videos_output:
+        valid_period_count = len(value.valid_periods)
+        if total_valid_periods == -1:
+            total_valid_periods = valid_period_count
+        elif valid_period_count != total_valid_periods:
+            return False
+    # check each period's corresponding 'start' or 'end' cross all videos
+    # and validate are no more than 500 ms apart.
+    for i in range(total_valid_periods):
+        for j in range(len(videos_output)):
+            for k in range(j + 1, len(videos_output)):
+                period1 = videos_output[j].valid_periods[i]
+                period2 = videos_output[k].valid_periods[i]
+                if not check_synced_periods(period1, period2):
+                    return False
+    return True
+
+
+def check_synced_periods(period1, period2):
+    if abs(period1[0] - period2[0]) > 0.5:
+        return False
+    if abs(period1[1] - period2[1]) > 0.5:
+        return False
+    return True
+
+
 def main():
     valid_video_periods_list = []
     for video_url in video_files_urls:
         video = download_video_file(video_url)
         output_file = expose_video_output(video)
         valid_video_periods_list.append(get_video_valid_periods(output_file))
-    print(valid_video_periods_list)
+    synced_frame = check_if_synced_frame_freeze(valid_video_periods_list)
+    freeze_output_obj = FreezeOutput(videos=valid_video_periods_list, all_videos_freeze_frame_synced=synced_frame)
+    print(json.dumps(freeze_output_obj.to_dict()))
 
 
 if __name__ == "__main__":
