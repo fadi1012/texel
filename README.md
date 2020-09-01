@@ -10,7 +10,11 @@
 -     docker run freezedetector
 
 # freeze_detector.py:
-- main file that contains the task requirements
+- main file that contains the task requirements it 
+- eventually create a json file that contains the requested data
+- under output dir
+- you can see all the downloaded videos under videos dir
+- all the output text files are located under output dir
 
 # freeze_output.py:
 - contains case classes for the final generated json object
@@ -26,3 +30,10 @@
 - if the calc of synced period method return correct values
 - a test method that can get a file and it's expected output
 - then it compares the date
+
+
+# TODO/Improvements:
+- add more tests coverage
+- create a docker file for running tests
+- fix the issue that when running the docker container
+- it's not creating output/videos files and it's content
