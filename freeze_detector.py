@@ -1,5 +1,5 @@
 from freeze_output import VideoOutput, FreezeOutput
-from video_utils import download_video_file, expose_video_output
+from video_utils import download_video_file, expose_video_output, VIDEO_OUTPUT_FILES_DIR
 import json
 
 video_files_urls = ["https://storage.googleapis.com/hiring_process_data/freeze_frame_input_a.mp4",
@@ -76,7 +76,11 @@ def main():
         valid_video_periods_list.append(get_video_valid_periods(output_file))
     synced_frame = check_if_synced_frame_freeze(valid_video_periods_list)
     freeze_output_obj = FreezeOutput(videos=valid_video_periods_list, all_videos_freeze_frame_synced=synced_frame)
-    print(json.dumps(freeze_output_obj.to_dict()))
+    json_data = json.dumps(freeze_output_obj.to_dict())
+    print(json_data)
+    json_file_path = VIDEO_OUTPUT_FILES_DIR + '/freeze_output.json'
+    open(json_file_path, 'w').write(json_data)
+    print(f"Please see generated json file {json_file_path}")
 
 
 if __name__ == "__main__":
