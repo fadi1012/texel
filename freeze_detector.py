@@ -19,6 +19,8 @@ def download_video_file(video_url=None):
     return video_path
 
 
+# this method uses ffmpeg cli with freezedetect filter and exposes video freeze detection
+# https://ffmpeg.org/ffmpeg-filters.html#freezedetect
 def expose_video_output(video_path, n=0.003, d=2):
     if not os.path.exists(VIDEO_OUTPUT_FILES_DIR):
         os.makedirs(VIDEO_OUTPUT_FILES_DIR)
@@ -29,18 +31,25 @@ def expose_video_output(video_path, n=0.003, d=2):
     return output_text_file_path
 
 
+# This method go over videos output file and returns a list that contains tuples of all the valid
+# periods of the video and the longest period of valid video of the stream
 def get_video_valid_periods(output_file):
     valid_periods_list = []
     valid_period_start = 0
+    longest_valid_period = 0
     with open(output_file, 'r') as file:
         for line in file:
             if 'freeze_start' in line:
                 freeze_start_value = float("{:.2f}".format(float(line.split("=")[1].replace("\n", ""))))
                 if freeze_start_value != 0:
                     valid_periods_list.append((valid_period_start, freeze_start_value))
+                    # Determine the longest period of valid video
+                    valid_period = freeze_start_value - valid_period_start
+                    if valid_period > longest_valid_period:
+                        longest_valid_period = valid_period
             elif 'freeze_end' in line:
                 valid_period_start = float("{:.2f}".format(float(line.split("=")[1].replace("\n", ""))))
-    return valid_periods_list
+    return valid_periods_list, longest_valid_period
 
 
 def main():
